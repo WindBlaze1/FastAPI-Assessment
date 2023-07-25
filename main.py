@@ -1,7 +1,6 @@
 """ imports """
 from datetime import datetime
 from fastapi import FastAPI, Query, HTTPException
-from fastapi.exceptions import ResponseValidationError
 from db import ConnectDB
 from pymongo import ASCENDING, DESCENDING
 from model import PaginatedTrades, Paginate, TradeList, emptyTradeList, SortOrder, TradeType
@@ -19,7 +18,7 @@ def get_search_info(search: str | None = None) -> TradeList:
         print(f'search query: {search}')
         db = ConnectDB()
         collection = db.get_collection()
-        query = {"$text": {'$search': search}}
+        query = {"$text": {'$search': f'^"{search}"$'}}
         print(query)
         cursor = collection.find(query)
         trades = parse_cursor(cursor)
@@ -33,20 +32,22 @@ def get_search_info(search: str | None = None) -> TradeList:
 
 @app.get('/trades', response_model=PaginatedTrades)
 def get_trades_list(
-    page: int = 1, page_size: int = 10,
+    page: int = 1, page_size: int = Query(10, description='The maximum trades displayed per page.'),
 
     sort: bool = False, order: SortOrder = SortOrder.ASC,
 
     sort_col: int = Query(
-        1, description="""values:
-            1[default]: asset_class,
-            2: counterparty,
-            3: instrument_id,
-            4: instrument_name,
-            5: trade_date_time,
-            6: buySellIndicator,
-            7: price,
-            8: quantity,
+        1, description="""
+            Sort according to any column.
+            values:
+            1: asset_class
+            2: counterparty
+            3: instrument_id
+            4: instrument_name
+            5: trade_date_time
+            6: buySellIndicator
+            7: price
+            8: quantity
             9: trader""", lt=10, gt=0
     ),
 
@@ -55,7 +56,7 @@ def get_trades_list(
 
     end: str | None = Query(
         None, description="The maximum date for the tradeDateTime field in ISO 8601 format \
-            (YYYY-MM-DD)", regex='^\d{4}-\d{2}-\d{2}$'),
+            (YYYY-MM-DD)", regex=r'^\d{4}-\d{2}-\d{2}$'),
 
     max_price: int | None = Query(
         None, description='The maximum value for the tradeDetails.price field.'),
@@ -65,7 +66,7 @@ def get_trades_list(
 
     start: str | None = Query(
         None, description="The minimum date for the tradeDateTime field in ISO 8601 format \
-            (YYYY-MM-DD)", regex='^\d{4}-\d{2}-\d{2}$'),
+            (YYYY-MM-DD)", regex=r'^\d{4}-\d{2}-\d{2}$'),
 
     trade_type: TradeType | None = Query(
         None, description='The tradeDetails.buySellIndicator is a BUY or SELL')
@@ -158,7 +159,7 @@ def get_trades_list(
     return PaginatedTrades(
         content=trades[first:last],
         total=len(trades),
-        count=min(page_size, len(trades[first:])),  # In the final page,
+        count=min(page_size, len(trades[first:])),  # On the final page,
                                                     # the count of total results should be exact
         page=page,
         paginate=Paginate(
