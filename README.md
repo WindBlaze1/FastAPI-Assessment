@@ -214,7 +214,7 @@ GET http://localhost:8000/trades?assetClass=Equity&tradeType=BUY&minPrice=1000
 To get a paginated and sorted list of trades, send a GET request to the `/trades` endpoint with the pagination and sorting parameters [can be sorted in asc/desc - and any of the columns can be sorted. To know more, try running the project and reading the documentation on `localhost:8000/docs`]:
 
 ```http
-GET http://localhost:8000/trades/?page=2&page_size=10&sort=true&order=desc&sort_col=5
+GET http://localhost:8000/trades?page=2&page_size=10&sort=true&order=desc&sort_col=5
 ```
 
 #### Response
