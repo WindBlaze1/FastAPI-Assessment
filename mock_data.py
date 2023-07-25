@@ -16,7 +16,7 @@ def generate_fake_data(N: int = 100) -> list:
     mock_data = []
     for _ in range(1, N + 1):
         try:
-            # sleep(random.uniform(0,1)) # For different trade time
+            sleep(random.uniform(0,1)) # For different trade time
             trade_id = str(ObjectId())
             trade = Trade(
                 assetClass=random.choice(['Bond','Equity','FX',None]),
@@ -45,7 +45,20 @@ def upload_fake_data_to_db(N: int):
         collection = db.get_collection()
         fake_data = generate_fake_data(N)
         print(fake_data)
+        # Insert fake data in the collection
         collection.insert_many(fake_data)
+
+        # Make an index for the 'search' operation to be performed on base API['/']
+        # Check whether already present
+        current_indexes = collection.index_information()
+        if "search_index" not in current_indexes:
+            # Create a text index for the fields 'counterparty', 'instrumentId', 'instrumentName', and 'trader'
+            collection.create_index([("counterparty", "text"), ("instrument_id", "text"),
+                                     ("instrument_name", "text"), ("trader", "text")],
+                                     name="search_index")
+            print('Index created successfully!')
+        else:
+            print('Index already present!')
     except Exception as exc:
         print(exc)
     finally:

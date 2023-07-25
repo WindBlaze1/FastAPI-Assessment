@@ -15,7 +15,7 @@ class ConnectDB:
             USER = config('USER')
             PASS = config('PASS')
             self.conn = MongoClient(f'mongodb+srv://{USER}:{PASS}@cluster0.l6yrrcu.mongodb.net/')
-            self.db = self.conn[DBName]    # DB name
+            self.db = self.conn[DBName]
             collection = self.db[collectionName]
             return collection
         except ConnectionFailure as err:
