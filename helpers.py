@@ -28,6 +28,7 @@ def get_trade_object(raw_trade) -> Trade:
     """ Converts a single mongodb response to a Trade object for further parsing to JSON """
     trade = dict(raw_trade)
     del trade['_id']
+    trade['trade_details']['price'] = round(trade['trade_details']['price'],2)
     key_map = {
         'asset_class': 'assetClass', 'instrument_id': 'instrumentId',
         'instrument_name': 'instrumentName', 'trade_date_time': 'tradeDateTime',

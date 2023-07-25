@@ -28,7 +28,7 @@ def generate_fake_data(N: int = 100) -> list:
                 tradeDateTime=dt.datetime.now(),
                 tradeDetails=TradeDetails(
                     buySellIndicator=random.choice([TradeType.BUY, TradeType.SELL]),
-                    price=random.uniform(50, 2000),
+                    price=round(random.uniform(50, 2000),2),
                     quantity=random.randint(100, 1000),
                 ),
                 tradeId=trade_id,
