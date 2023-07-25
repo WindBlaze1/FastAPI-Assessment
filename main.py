@@ -1,99 +1,93 @@
 from fastapi import FastAPI
 from db import ConnectDB
-from model import Trade
-from bson.objectid import ObjectId
+from model import PaginatedTrades, Paginate, TradeList, emptyTradeList
+from helpers import parse_cursor, get_trade_object
 
 app = FastAPI()
 
-def parse_str(st: str) -> str:
-    """ Parsing the search string """
-    try:
-        st_ = [i for i in st.split(' ') if i != '' or i != ' ']
-        st_ = [i[0].upper() + i[1:] for i in st_]
-        return ' '.join(st_)
-    except:
-        return st
-    
-
-def update_dict_keys(dct: dict, keys: dict) -> dict:
-    """ Changes the values of KEYS of a dictionary with the mapping provided in 2nd parameter """
-    updated_dict = dct.copy()
-    for old_key, new_key in keys.items():
-        if old_key in updated_dict:
-            updated_dict[new_key] = updated_dict.pop(old_key)
-    return updated_dict
-
-def get_trade_object(raw_trade) ->Trade:
-    """ Converts a single mongodb response to a Trade object for further parsing to JSON """
-    trade = dict(raw_trade)
-    del trade['_id']
-    key_map = {
-        'asset_class':'assetClass','instrument_id':'instrumentId',
-        'instrument_name':'instrumentName','trade_date_time':'tradeDateTime',
-        'trade_details':'tradeDetails','trade_id':'tradeId'
-        }
-    return Trade(**update_dict_keys(trade,key_map))
-
-def parse_cursor(cursor) -> list[Trade]:
-    """ Parses a mongodb cursor, to convert it into a list of Trade objects """
-    trades = []
-    for trade in cursor:
-        trade = get_trade_object(trade)
-        trades.append(trade)
-    return trades
-
 
 @app.get('/')
-def get_search_info(search:str | None = None):
+def get_search_info(search: str | None = None) -> TradeList:
     """ The search method of the API """
-    if not search:
-        return {'api status':'online'}
+    if search is None:
+        return emptyTradeList
     else:
         print(f'search query: {search}')
         db = ConnectDB()
         collection = db.get_collection()
-        query = {"$text":{'$search':parse_str(search)}}
+        query = {"$text": {'$search': search}}
         print(query)
         cursor = collection.find(query)
         trades = parse_cursor(cursor)
         print(len(trades))
-        response = {
-            'data':trades,
-            'length':len(trades)
-        }
+        response = TradeList(
+            content=trades,
+            total=len(trades)
+        )
         return response
 
 
-@app.get('/trades')
-def get_trades_list() -> list[Trade]:
-    """ getting a paginated list of trades """
+@app.get('/trades', response_model=PaginatedTrades)
+def get_trades_list(page: int = 1, page_size: int = 10):
+    """ Getting a paginated list of trades """
+
+    # Get the data from db
     db = ConnectDB()
     collection = db.get_collection()
     cursor = collection.find()
-    # print(len(cursor))
     trades = parse_cursor(cursor)
-    print(len(trades))
+    total_data_len = len(trades)
     db.close()
-    return {
-        'data':trades,
-        'length':len(trades)
-    }
+
+    # Get the page
+    start = (page - 1) * page_size
+    end = start + page_size
+
+    if end >= total_data_len:
+        nxt = None
+
+        if page > 1:
+            prev = f'/trades?page={page-1}&page_size={page_size}'
+        else:
+            prev = None
+
+    else:
+        if page > 1:
+            prev = f'/trades?page={page-1}&page_size={page_size}'
+        else:
+            prev = None
+
+        nxt = f'/trades?page={page+1}&page_size={page_size}'
+
+    return PaginatedTrades(
+        content=trades[start:end],
+        total=end - start + 1,
+        count=page_size,
+        paginate=Paginate(
+            previous=prev,
+            next=nxt
+        )
+    )
 
 
-@app.get('/trades/{trade_id}')
-def get_trade_by_trade_id(trade_id: str) -> Trade:
+@app.get('/trades/{trade_id}', response_model=TradeList)
+def get_trade_by_trade_id(trade_id: str):
     """ getting a trade by its trade_id """
     try:
-        print(trade_id)
+        print('trade_id:',trade_id)
         db = ConnectDB()
         collection = db.get_collection()
-        trade = collection.find_one({'trade_id':trade_id})
-        print(trade)
+        trade = collection.find_one({'trade_id': trade_id})
+        # print(trade)
+        if trade is None:
+            return emptyTradeList
+        
         trade = get_trade_object(trade)
         print(trade)
-        return {
-            'data':trade
-        }
+        return TradeList(
+            content=trade,
+            total=1
+        )
     except Exception as exc:
         print(exc)
     finally:
