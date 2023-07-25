@@ -10,10 +10,24 @@ class SortOrder(str, Enum):
     ASC = 'asc'
     DESC = 'desc'
 
+
 class TradeType(str, Enum):
     """ A value of BUY for buys, SELL for sells. """
     BUY = 'BUY'
     SELL = 'SELL'
+
+
+class SortColumn(str, Enum):
+    """ A Class for specifying which column to sort. """
+    ONE = 'asset_class'
+    TWO = 'counterparty'
+    THREE = 'instrument_id'
+    FOUR = 'instrument_name'
+    FIVE = 'trade_date_time'
+    SIX = 'trade_details.buySellIndicator'
+    SEVEN = 'trade_details.price'
+    EIGHT = 'trade_details.quantity'
+    NINE = 'trader'
 
 
 class TradeDetails(BaseModel):

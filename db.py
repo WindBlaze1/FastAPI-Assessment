@@ -3,8 +3,10 @@ from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 from starlette.config import Config
 
+
 class ConnectDB:
     """ A Wrapper class for pymongo and Atlas """
+
     def __init__(self) -> None:
         self.conn = None
 
@@ -17,7 +19,8 @@ class ConnectDB:
             USER = config('USER')
             PASS = config('PASS')
             CLUSTER_URL = config('CLUSTER_URL')
-            self.conn = MongoClient(f'mongodb+srv://{USER}:{PASS}@{CLUSTER_URL}/')
+            self.conn = MongoClient(
+                f'mongodb+srv://{USER}:{PASS}@{CLUSTER_URL}/')
             self.db = self.conn[DBName]
             collection = self.db[collectionName]
             return collection

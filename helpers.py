@@ -1,5 +1,18 @@
 """ imports """
-from model import Trade
+from model import Trade, SortColumn
+
+
+def get_sorted(choice):
+    choices = {1: SortColumn.ONE,
+               2: SortColumn.TWO,
+               3: SortColumn.THREE,
+               4: SortColumn.FOUR,
+               5: SortColumn.FIVE,
+               6: SortColumn.SIX,
+               7: SortColumn.SEVEN,
+               8: SortColumn.EIGHT,
+               9: SortColumn.NINE, }
+    return choices[choice]
 
 
 def update_dict_keys(dct: dict, keys: dict) -> dict:

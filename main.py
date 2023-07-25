@@ -1,10 +1,11 @@
 """ imports """
 from datetime import datetime
 from fastapi import FastAPI, Query, HTTPException
+from fastapi.exceptions import ResponseValidationError
 from db import ConnectDB
 from pymongo import ASCENDING, DESCENDING
 from model import PaginatedTrades, Paginate, TradeList, emptyTradeList, SortOrder, TradeType
-from helpers import parse_cursor, get_trade_object
+from helpers import parse_cursor, get_trade_object, get_sorted
 
 app = FastAPI()
 
@@ -36,12 +37,25 @@ def get_trades_list(
 
     sort: bool = False, order: SortOrder = SortOrder.ASC,
 
+    sort_col: int = Query(
+        1, description="""values:
+            1[default]: asset_class,
+            2: counterparty,
+            3: instrument_id,
+            4: instrument_name,
+            5: trade_date_time,
+            6: buySellIndicator,
+            7: price,
+            8: quantity,
+            9: trader""", lt=10, gt=0
+    ),
+
     asset_class: str | None = Query(
         None, description='Asset class of the trade.'),
 
     end: str | None = Query(
         None, description="The maximum date for the tradeDateTime field in ISO 8601 format \
-            (YYYY-MM-DD)"),
+            (YYYY-MM-DD)", regex='^\d{4}-\d{2}-\d{2}$'),
 
     max_price: int | None = Query(
         None, description='The maximum value for the tradeDetails.price field.'),
@@ -51,12 +65,12 @@ def get_trades_list(
 
     start: str | None = Query(
         None, description="The minimum date for the tradeDateTime field in ISO 8601 format \
-            (YYYY-MM-DD)"),
+            (YYYY-MM-DD)", regex='^\d{4}-\d{2}-\d{2}$'),
 
     trade_type: TradeType | None = Query(
         None, description='The tradeDetails.buySellIndicator is a BUY or SELL')
-):
-    """ Getting a paginated list of trades, with sorting[asc/desc] and advanced filters """
+) -> HTTPException | PaginatedTrades:
+    """ Getting a paginated list of trades, with advanced[acc. to any of the folders] sorting[asc/desc] and advanced filters."""
 
     # Fetch the advanced filtering criteria:
     filters = {}
@@ -81,13 +95,12 @@ def get_trades_list(
         for data in lst:
 
             try:
-                print(type(data[0]), data[0])
+                print('here', type(data[0]), data[0])
                 date = datetime.fromisoformat(data[0])
                 date_filter[data[1]] = date
 
-            except ValueError:
-                return HTTPException(status_code=400, detail='Invalid date format. Please use ISO \
-                                     8601 format (YYYY-MM-DD).')
+            except ValueError as err:
+                raise HTTPException(status_code=400, detail=str(err)) from err
 
         filters['trade_date_time'] = date_filter
 
@@ -116,9 +129,9 @@ def get_trades_list(
     collection = db.get_collection()
     cursor = collection.find(filters)
     if sort:
-        cursor = cursor.sort('trader', direction=sort_order)
+        cursor = cursor.sort(get_sorted(sort_col), direction=sort_order)
     trades = parse_cursor(cursor)
-    print(trades)
+    # print(trades)
     total_data_len = len(trades)
     db.close()
 
