@@ -12,7 +12,7 @@ pip install fastapi uvicorn
 
 ## Running the API
 
-Save the code into a Python file (e.g., `main.py`), and then run the API with the following command:
+Save the files in a directory, `cd` into it and then run the API with the following command:
 
 ```bash
 uvicorn main:app --reload
