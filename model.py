@@ -1,7 +1,13 @@
 import datetime as dt
-
+from enum import Enum
 from typing import Optional, List
 from pydantic import BaseModel, Field
+
+
+class SortOrder(str, Enum):
+    """ A Class to get the order of sorting """
+    ASC = 'asc'
+    DESC = 'desc'
 
 
 class TradeDetails(BaseModel):
@@ -15,13 +21,16 @@ class TradeDetails(BaseModel):
 
 class Trade(BaseModel):
     asset_class: Optional[str] = Field(
-        alias="assetClass", default=None, description="The asset class of the instrument traded. E.g. Bond, Equity, FX...etc")
+        alias="assetClass", default=None, description="The asset class of the instrument\
+              traded. E.g. Bond, Equity, FX...etc")
 
     counterparty: Optional[str] = Field(
-        default=None, description="The counterparty the trade was executed with. May not always be available")
+        default=None, description="The counterparty the trade was executed with. \
+            May not always be available")
 
     instrument_id: str = Field(
-        alias="instrumentId", description="The ISIN/ID of the instrument traded. E.g. TSLA, AAPL, AMZN...etc")
+        alias="instrumentId", description="The ISIN/ID of the instrument traded. \
+            E.g. TSLA, AAPL, AMZN...etc")
 
     instrument_name: str = Field(
         alias="instrumentName", description="The name of the instrument traded.")
@@ -39,11 +48,13 @@ class Trade(BaseModel):
 
 
 class Paginate(BaseModel):
-    previous: int = None
-    next: int = None
+    """ Store previous and next page URLs """
+    previous: str | None = None
+    next: str | None = None
 
 
 class PaginatedTrades(BaseModel):
+    """ Class to Paginate the Trade List """
     content: List[Trade]
     total: int
     count: int
@@ -51,7 +62,9 @@ class PaginatedTrades(BaseModel):
 
 
 class TradeList(BaseModel):
+    """ Class to return a list of Trades """
     content: List[Trade]
     total: int
+
 
 emptyTradeList = TradeList(content=[], total=0)

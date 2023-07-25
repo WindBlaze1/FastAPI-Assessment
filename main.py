@@ -1,6 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from db import ConnectDB
-from model import PaginatedTrades, Paginate, TradeList, emptyTradeList
+from pymongo import ASCENDING, DESCENDING
+from model import PaginatedTrades, Paginate, TradeList, emptyTradeList, SortOrder
 from helpers import parse_cursor, get_trade_object
 
 app = FastAPI()
@@ -28,13 +29,22 @@ def get_search_info(search: str | None = None) -> TradeList:
 
 
 @app.get('/trades', response_model=PaginatedTrades)
-def get_trades_list(page: int = 1, page_size: int = 10):
-    """ Getting a paginated list of trades """
+def get_trades_list(page: int = 1, page_size: int = 10, sort: bool = False, order: SortOrder = SortOrder.ASC):
+    """ Getting a paginated list of trades, with sorting[asc/desc] """
+
+    # Get the sorting order
+    if sort:
+        if order is SortOrder.ASC:
+            sort_order = ASCENDING
+        else:
+            sort_order = DESCENDING
 
     # Get the data from db
     db = ConnectDB()
     collection = db.get_collection()
     cursor = collection.find()
+    if sort:
+        cursor = cursor.sort('trader', direction=sort_order)
     trades = parse_cursor(cursor)
     total_data_len = len(trades)
     db.close()
@@ -74,14 +84,14 @@ def get_trades_list(page: int = 1, page_size: int = 10):
 def get_trade_by_trade_id(trade_id: str):
     """ getting a trade by its trade_id """
     try:
-        print('trade_id:',trade_id)
+        print('trade_id:', trade_id)
         db = ConnectDB()
         collection = db.get_collection()
         trade = collection.find_one({'trade_id': trade_id})
         # print(trade)
         if trade is None:
             return emptyTradeList
-        
+
         trade = get_trade_object(trade)
         print(trade)
         return TradeList(
