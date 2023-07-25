@@ -1,3 +1,4 @@
+""" imports """
 import datetime as dt
 from enum import Enum
 from typing import Optional, List
@@ -9,9 +10,14 @@ class SortOrder(str, Enum):
     ASC = 'asc'
     DESC = 'desc'
 
+class TradeType(str, Enum):
+    """ A value of BUY for buys, SELL for sells. """
+    BUY = 'BUY'
+    SELL = 'SELL'
+
 
 class TradeDetails(BaseModel):
-    buySellIndicator: str = Field(
+    buySellIndicator: TradeType = Field(
         description="A value of BUY for buys, SELL for sells.")
 
     price: float = Field(description="The price of the Trade.")
@@ -58,6 +64,7 @@ class PaginatedTrades(BaseModel):
     content: List[Trade]
     total: int
     count: int
+    page: int
     paginate: Paginate
 
 

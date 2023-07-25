@@ -1,3 +1,4 @@
+""" imports """
 import datetime as dt
 import random
 from time import sleep
@@ -5,10 +6,11 @@ from db import ConnectDB
 from faker import Faker
 from pydantic import ValidationError
 from bson.objectid import ObjectId
-from model import TradeDetails, Trade
+from model import TradeDetails, Trade, TradeType
 
 
 def generate_fake_data(N: int = 100) -> list:
+    """ Generates fake data to upload to db """
     fake = Faker()
     print(N)
 
@@ -25,7 +27,7 @@ def generate_fake_data(N: int = 100) -> list:
                 instrumentName=fake.name(),
                 tradeDateTime=dt.datetime.now(),
                 tradeDetails=TradeDetails(
-                    buySellIndicator=random.choice(["BUY", "SELL"]),
+                    buySellIndicator=random.choice([TradeType.BUY, TradeType.SELL]),
                     price=random.uniform(50, 2000),
                     quantity=random.randint(100, 1000),
                 ),
@@ -40,6 +42,7 @@ def generate_fake_data(N: int = 100) -> list:
 
 
 def upload_fake_data_to_db(N: int):
+    """ Uploads the generated fake data to db """
     try:
         db = ConnectDB()
         collection = db.get_collection()
@@ -49,10 +52,12 @@ def upload_fake_data_to_db(N: int):
         collection.insert_many(fake_data)
 
         # Make an index for the 'search' operation to be performed on base API['/']
-        # Check whether already present
+        # Check whether index is already present
         current_indexes = collection.index_information()
         if "search_index" not in current_indexes:
-            # Create a text index for the fields 'counterparty', 'instrumentId', 'instrumentName', and 'trader'
+            # Create a text index for the fields:
+            # 'counterparty', 'instrumentId',
+            # 'instrumentName', and 'trader'
             collection.create_index([("counterparty", "text"), ("instrument_id", "text"),
                                      ("instrument_name", "text"), ("trader", "text")],
                                     name="search_index")

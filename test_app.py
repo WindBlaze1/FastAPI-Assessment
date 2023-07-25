@@ -4,6 +4,13 @@ print(requests.get("http://127.0.0.1:8000/trades").json(), '\n')
 print(requests.get("http://127.0.0.1:8000/trades?sort=true").json(), '\n')
 print(requests.get("http://127.0.0.1:8000/trades?page=2&page_size=10").json(), '\n')
 
+print(requests.get("http://127.0.0.1:8000/trades?asset_class=FX&end=2023-07-27&trade_type=SELL").json(), '\n')
+print(requests.get("").json(), '\n')
+print(requests.get("").json(), '\n')
+print(requests.get("").json(), '\n')
+print(requests.get("").json(), '\n')
+print(requests.get("").json(), '\n')
+
 
 print(requests.get("http://127.0.0.1:8000/?search=bob").json(), '\n')
 print(requests.get("http://127.0.0.1:8000/?search=henry").json(), '\n')
